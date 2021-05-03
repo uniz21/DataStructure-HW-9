@@ -33,6 +33,9 @@ int freeBST(Node* head); /* free all memories allocated to the tree */
 
 int precheck(Node *head,int);
 
+int recursiveDeletechecker = 0;
+Node* node2search = NULL;
+
 int main()
 {
 	char command;
@@ -84,6 +87,8 @@ int main()
 		case 's': case 'S':
 			printf("Your Key = ");
 			scanf("%d", &key);
+			if (!precheck(head, 1)) break;
+			node2search = NULL;
 			ptr = searchRecursive(head->left, key);
 			if(ptr != NULL)
 				printf("\n node [%d] found at %p\n", ptr->key, ptr);
@@ -129,7 +134,7 @@ int precheck(Node* head, int mode)
 	/* 헤드노드 초기화 */
 	if (head == NULL)
 	{
-		printf("Initialize First");
+		printf("Initialize First\n");
 		return 0;
 	}
 	switch (mode)
@@ -138,7 +143,7 @@ int precheck(Node* head, int mode)
 		case 1:
 			if (head->left == NULL)
 			{
-				printf("There is no Tree");
+				printf("There is no Tree\n");
 				return 0;
 			}
 		default:
@@ -281,19 +286,94 @@ int insert(Node* head, int key)
 	return 0;
 }
 
+/* 잎노드 삭제 */
 int deleteLeafNode(Node* head, int key)
 {
+	/* 전처리, 헤드가 초기화 되지 않은경우 리턴	*/
+	if (!precheck(head, 0)) return 0;
 
+	/* 현재노드가 헤드노드면 왼쪽만 탐색 */
+	if (head->right == head)
+	{
+		/*
+		* 현재노드가 헤드노드면 현재 함수는 모든 노드를 탐색한 후 리턴되므로,
+		* 다음 노드를 탐색하기 전에 전역변수 recursiveDeletechecker를 0으로 초기화.
+		*/
+		recursiveDeletechecker = 0;
+
+		/* 
+		* 탐색중인 노드가 삭제되었을 경우에는 0(NULL)값을 리턴을 통해 저장하여 줄기 노드를 잎 노드화, 
+		* 삭제되지 않은 경우에는 해당 노드를 리턴을 통해 저장하여 기존의 연결 유지 
+		*/
+		head->left = deleteLeafNode(head->left, key);
+
+		/*
+		if (deleteLeafNode(head->left, key))
+		{
+			head->left = NULL;
+		}
+		*/
+	}
+	/* 양쪽노드가 NULL값이 아니면 잎노드가 아니므로 계속 탐색 */
+	else
+	{
+		if (head->left != NULL) head->left = deleteLeafNode(head->left, key);
+		if (head->right != NULL) head->right = deleteLeafNode(head->right, key);
+	}
+
+	/* 현재 노드의 키 값이 입력받은 키 값과 같고, 아직 삭제된 노드가 없다면 */
+	if (head->key == key && recursiveDeletechecker == 0)
+	{
+		/* 재귀함수의 특성상 상태를 기억하지 못하므로 전역변수 recursiveDeletechecker에 1을 저장해, 노드의 삭제 여부를 기억한다. */
+		recursiveDeletechecker = 1;
+		/* 현재 노드가 잎 노드라면 */
+		if (head->left == NULL && head->right == NULL)
+		{
+			/* 삭제하고, 0(NULL)을 반환 */
+			free(head);
+			return 0;
+		}
+		/* 삭제할 노드가 잎 노드가 아닌 경우 */
+		else
+		{
+			printf("the node[%d] is not a leaf\n", key);
+			return head;
+		}
+	}
+	
+	/* 모든 탐색을 마치고(현재노드가 헤드노드) 나서도, 삭제된 노드가 없다면 */
+	if(head->key == -9999 && recursiveDeletechecker == 0)
+	{
+		printf("Cannot find the node[%d]\n", key);
+		return head;
+	}
 }
 
+/* 재귀 탐색 */
 Node* searchRecursive(Node* ptr, int key)
 {
+	/* 재귀 탐색 */
+	if(ptr->left) node2search = searchRecursive(ptr->left, key);
+	if(ptr->right) node2search = searchRecursive(ptr->right, key);
 
+	/* 현재 노드가 찾던 노드이면 */
+	if (ptr->key == key)
+	{
+		/* 전역변수 node2search에 현재노드를 저장 */
+		node2search = ptr;
+	}
+
+	/* node2search가 NULL이 아니면 리턴*/
+	if (node2search) return node2search;
+	else return 0;
 }
 
 Node* searchIterative(Node* head, int key)
 {
+	Node* node2search;
 
+	printf("node [%d] found at %s", key, node2search);
+	printf("Cannot find the node[%d]", key);
 }
 
 /* 재귀적으로 트리를 탐색하여 메모리 해제*/
