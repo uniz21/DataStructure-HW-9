@@ -31,7 +31,7 @@ int freeBST(Node* head); /* free all memories allocated to the tree */
 
 /* you may add your own defined functions if necessary */
 
-int precheck(Node *head);
+int precheck(Node *head,int);
 
 int main()
 {
@@ -92,19 +92,23 @@ int main()
 			break;
 
 		case 'i': case 'I':
-			if (precheck(head))
+			if (precheck(head,1))
 			{
+				/*
+				* Traversal 함수들은 head가 아닌 head->left를 인자로 받기 때문에 초기화 되지 않은 경우,
+				* NULL포인터 호출로 에러가 발생할 수 있어, 함수 호출 전에 전처리
+				*/
 				inorderTraversal(head->left);
 			}
 			break;
 		case 'p': case 'P':
-			if (precheck(head))
+			if (precheck(head,1))
 			{
 				preorderTraversal(head->left);
 			}
 			break;
 		case 't': case 'T':
-			if (precheck(head))
+			if (precheck(head,1))
 			{
 				postorderTraversal(head->left);
 			}
@@ -119,18 +123,26 @@ int main()
 	return 1;
 }
 
-int precheck(Node* head)
+/* 전처리 함수 */
+int precheck(Node* head, int mode)
 {
+	/* 헤드노드 초기화 */
 	if (head == NULL)
 	{
 		printf("Initialize First");
 		return 0;
 	}
-
-	if (head->left == NULL)
+	switch (mode)
 	{
-		printf("There is no Tree");
-		return 0;
+		/* 순회함수 전처리 트리에 생성된 노드가 없는 경우 */
+		case 1:
+			if (head->left == NULL)
+			{
+				printf("There is no Tree");
+				return 0;
+			}
+		default:
+			break;
 	}
 	return 1;
 }
@@ -149,41 +161,44 @@ int initializeBST(Node** h) {
 	return 1;
 }
 
+/* 중위 순회 */
 void inorderTraversal(Node* ptr)
 {
-	/*
-	* 전처리, 함수가 head->left를 매개변수로 받아 ptr이 NULL 포인터인 경우 함수 호출에서 에러가 나므로 커맨드 호출시 함수로 검사.
-	if (ptr == NULL)
-	{
-		printf("There is no Tree");
-		return -1;
-	}
-	*/
-
 	if (ptr)
 	{
+		/* 왼쪽노드를 먼저 탐색 */
 		inorderTraversal(ptr->left);
+		/* 오른쪽 노드를 탐색하기 전에 현재 노드를 표기 */
 		printf("[%d] ", ptr->key);
+		/* 오른쪽 노드 탐색 */
 		inorderTraversal(ptr->right);
 	}
 }
 
+/* 전위 순회 */
 void preorderTraversal(Node* ptr)
 {
 	if (ptr)
 	{
+		/* 현재 노드를 표기 */
 		printf("[%d] ", ptr->key);
+		/* 왼쪽 노드 탐색 */
 		preorderTraversal(ptr->left);
+		/* 오른쪽 노드 탐색 */
 		preorderTraversal(ptr->right);
 	}
 }
 
+/* 후위 순회 */
 void postorderTraversal(Node* ptr)
 {
 	if (ptr)
 	{
+		/* 왼쪽 노드 탐색 */
 		postorderTraversal(ptr->left);
+		/* 오른쪽 노드 탐색 */
 		postorderTraversal(ptr->right);
+		/* 현재 노드를 표기 */
 		printf("[%d] ", ptr->key);
 	}
 }
@@ -191,16 +206,13 @@ void postorderTraversal(Node* ptr)
 
 int insert(Node* head, int key)
 {
-
-	if (head == NULL)
-	{
-		printf("Initialize First");
-		return 0;
-	}
+	/* 전처리 */
+	if (!precheck(head, 0)) return 0;
 
 	Node *p;
-	Node* node2insert = (Node*)malloc(sizeof(Node));
 
+	/* 새로운 노드 생성 */
+	Node* node2insert = (Node*)malloc(sizeof(Node));
 	node2insert->key = key;
 	node2insert->left = NULL;
 	node2insert->right = NULL;
@@ -209,56 +221,60 @@ int insert(Node* head, int key)
 
 	while (1)
 	{
+		/* 현재노드가 헤드노드인 경우 */
 		if (p->key == -9999)
 		{
+			/* 트리에 헤드노드를 제외한 노드가 없는 경우 새로운 노드를 헤드노드 왼쪽에 삽입 */
 			if (p->left == NULL) 
 			{
 				p->left = node2insert;
 				return 0;
 			}
+			/* 트리에 기존 노드가 있는 경우 다음 노드 탐색 */
 			p = p->left;
 		}
 
+		/* 입력받은 키가 현재 노드의 키 값보다 작다면 */
 		if (p->key > key)
 		{
 			if (p->left == NULL)
 			{
+				/* 비어있다면 노드 삽입 */
 				p->left = node2insert;
 				return 0;
 			}
-			else
-			{
-				p = p->left;
-			}
+			/* 좌측에 기존 노드가 있는 경우 다음 노드 탐색 */
+			p = p->left;
 		}
+		/* 입력받은 키가 현재 노드의 키 값보다 크다면 */
 		else if (p->key < key)
 		{
 			if (p->right == NULL)
 			{
+				/* 비어있다면 노드 삽입 */
 				p->right = node2insert;
 				return 0;
 			}
-			else
-			{
-				p = p->right;
-			}
+			/* 우측에 기존 노드가 있는 경우 다음 노드 탐색 */
+			p = p->right;
 		}
+		/* 입력받은 키가 현재 노드의 키 값과 같다면 */
 		else if (p->key == key)
 		{
+			/* 왼쪽노드를 우선 확인하고 비어 있으면 삽입 */
 			if (p->left == NULL)
 			{
 				p->left = node2insert;
 				return 0;
 			}
+			/* 오른쪽 노드를 확인하고 비어 있으면 새로운 노드 삽입 */
 			else if (p->right == NULL)
 			{
 				p->right = node2insert;
 				return 0;
 			}
-			else
-			{
-				p = p->left;
-			}
+			/* 양쪽에 기존 노드가 있다면 탐색을 이어 나간다. */
+			p = p->left;
 		}
 	}
 
@@ -283,6 +299,9 @@ Node* searchIterative(Node* head, int key)
 /* 재귀적으로 트리를 탐색하여 메모리 해제*/
 int freeBST(Node* head)
 {
+	/* 전처리, 헤드가 초기화 되지 않은경우 리턴	*/
+	if (!precheck(head,0)) return 0;
+
 	/* 현재노드가 헤드노드면 왼쪽만 탐색 */
 	if (head->right == head)
 	{
